@@ -1,5 +1,5 @@
-# NCCUCourseRate
-A simple python base web crawler for nccu course rate
+# NCCUCourse
+A set of NCCU Course tools, base on python3
 
 ## Environment
 - Python 3.9^
