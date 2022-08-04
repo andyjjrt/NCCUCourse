@@ -6,7 +6,9 @@ YEAR = "111"
 SEM = "1"
 USERNAME = os.getenv('USERNAME')
 PASSWORD = os.getenv('PASSWORD')
-COURSELIST_CSV = "1111CoursesList.csv"
+COURSELIST_CSV = YEAR + SEM + "CoursesList.csv"
+COURSERESULT_YEARSEM = "1102"
+COURSERESULT_CSV = "1102CourseResult.csv"
 
 SERVER_URL = "https://es.nccu.edu.tw/"
 KEY = "angu1arjjlST@2019"
