@@ -23,7 +23,7 @@ def fetchTeacherId(courseList):
         sleep(0.01)
       st = time()
       # Add to trace
-      res = requests.post(get_addtrack_url(encstu, courseId)).json()
+      requests.post(get_addtrack_url(encstu, courseId))
       while time() - st < timeHold:
         sleep(0.01)
       st = time()
@@ -44,16 +44,14 @@ def fetchTeacherId(courseList):
             teacher_name = str(cols[0].text)
             teacher_id = str(cols[1].find("a")["href"].split("statisticAll.jsp-tnum=")[1].split(".htm")[0])
             data[teacher_name] = teacher_id
+      while time() - st < timeHold:
+        sleep(0.01)
+      st = time()
+      # Delete from trace
+      requests.delete(get_deltrack_url(encstu, courseId))
     except Exception as e:
       logging.exception("Error occurred while parsing course: " + courseId)
-      
     i += 1
-    
-    while time() - st < timeHold:
-      sleep(0.01)
-    st = time()
-    # Delete from trace
-    res = requests.delete(get_deltrack_url(encstu, courseId)).text
     
   with open(os.path.join(dir_path, "_data", "classes.json"), "w+", encoding="utf-8") as f:
     json.dump(data, f)

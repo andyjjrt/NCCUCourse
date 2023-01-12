@@ -13,5 +13,5 @@ if not os.path.exists(os.path.join(dir_path, "_data")):
   os.makedirs(os.path.join(dir_path, "_data"))
 
 classes = fetchClass()
-TeacherId = fetchTeacherId()
+TeacherId = fetchTeacherId(classes)
 print(TeacherId)
