@@ -1,17 +1,17 @@
-from tqdm import tqdm, trange
-import CourseRate, TeacherId, MoodleId, CourseResult
+import os, json
 
+from fetchClass import fetchClass
+from fetchTeacherId import fetchTeacherId
 
-pbar = trange(4)
-pbar.set_postfix_str("processing: TeacherId")
-TeacherId.main()
-pbar.update(1)
-pbar.set_postfix_str("processing: MoodleId")
-MoodleId.main()
-pbar.update(1)
-pbar.set_postfix_str("processing: CourseRate")
-CourseRate.main()
-pbar.update(1)
-pbar.set_postfix_str("processing: CourseRaesult")
-CourseResult.main()
-pbar.update(1)
+dir_path = os.path.dirname(os.path.realpath(__file__))
+
+def useOldClasses():
+  with open(os.path.join(dir_path, "_data", "classes.json"), "r") as f:
+    return json.loads(f.read())
+
+if not os.path.exists(os.path.join(dir_path, "_data")):
+  os.makedirs(os.path.join(dir_path, "_data"))
+
+classes = fetchClass()
+TeacherId = fetchTeacherId()
+print(TeacherId)
