@@ -12,7 +12,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 timeHold = 0.2
 
 def fetchClass():
-  print("YEAR=" + year + " SEM=" + semester)
+  print("Fetching class, YEAR=" + year + " SEM=" + semester)
   classes = list()
   categories = list()
   units = requests.get("https://qrysub.nccu.edu.tw/assets/api/unit.json").json()
@@ -40,10 +40,13 @@ def fetchClass():
         courseId = course["subNum"]
         classes.append(courseId)
     except Exception as e:
-      raise e
+      with open(os.path.join(dir_path, "_data", "log.txt"), "a") as f:
+        f.write(str(e))
+        f.close()
 
   with open(os.path.join(dir_path, "_data", "classes.json"), "w+") as f:
     json.dump(classes, f)
-  print("Done at " + str(time()))
+    f.close()
+  print("Fetching class done at " + str(time()))
   
   return classes
