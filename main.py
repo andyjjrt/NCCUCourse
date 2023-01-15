@@ -17,6 +17,6 @@ def useOldTeachers():
 if not os.path.exists(os.path.join(dir_path, "_data")):
   os.makedirs(os.path.join(dir_path, "_data"))
 
-# classes = fetchClass()
-# TeacherId = fetchTeacherId(classes)
-fetchRate(useOldTeachers())
+classes = fetchClass()
+TeacherId = fetchTeacherId(classes)
+fetchRate(TeacherId)
