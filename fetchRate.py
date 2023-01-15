@@ -7,43 +7,43 @@ from constant import URL, COURSE_RATE_URL, RATE_QRY
 dir_path = os.path.dirname(os.path.realpath(__file__))
 i = 0
 
-def course_rate(param, year_sem, course_id, name, teacher):
+def course_rate(param, year_sem, rate_year_sem, course_id, name, teacher):
     try:
-        for rate_year_sem in RATE_QRY():
-            res = requests.get(COURSE_RATE_URL(param, rate_year_sem)).content
-            soup = BeautifulSoup(res, "html.parser")
-            table = soup.find_all('table')[2]
-            rows = table.find_all('tr')
-            comments = list()
-            for row in rows:
-                comments.append(row.find('td').text)
-            
-            # Initialize folder if not exist
-            if not os.path.exists(os.path.join(dir_path, "result", teacher)):
-                os.makedirs(os.path.join(dir_path, "result", teacher))
-            if not os.path.exists(os.path.join(dir_path, "result", teacher, name)):
-                os.makedirs(os.path.join(dir_path, "result", teacher, name))
-                with open(os.path.join(dir_path, "result", teacher, name, "index.json"), 'w+') as f:
-                    json.dump(list(), f)
-                    f.close()
-                    
-            # Read exist data
-            course_index = list()
-            with open(os.path.join(dir_path, "result", teacher, name, "index.json"), 'r') as f:
-                course_index = json.loads(f.read())
-            
-            # Add this index
-            course_index.append(dict({"year_sem": year_sem, "course_id": course_id}))
-            
+        res = requests.get(COURSE_RATE_URL(param, rate_year_sem)).content
+        soup = BeautifulSoup(res, "html.parser")
+        table = soup.find_all('table')[2]
+        rows = table.find_all('tr')
+        comments = list()
+        for row in rows:
+            comments.append(row.find('td').text)
+        
+        # Initialize folder if not exist
+        if not os.path.exists(os.path.join(dir_path, "result", teacher)):
+            os.makedirs(os.path.join(dir_path, "result", teacher))
+        if not os.path.exists(os.path.join(dir_path, "result", teacher, name)):
+            os.makedirs(os.path.join(dir_path, "result", teacher, name))
             with open(os.path.join(dir_path, "result", teacher, name, "index.json"), 'w+') as f:
-                json.dump(course_index, f)
+                json.dump(list(), f)
                 f.close()
-            
-            with open(os.path.join(dir_path, "result", teacher, name, year_sem + course_id + ".json"), 'w+') as f:
-                json.dump(comments, f)
-                f.close()
+                
+        # Read exist data
+        course_index = list()
+        with open(os.path.join(dir_path, "result", teacher, name, "index.json"), 'r') as f:
+            course_index = json.loads(f.read())
+        
+        # Add this index
+        course_index.append(dict({"year_sem": year_sem, "course_id": course_id}))
+        
+        with open(os.path.join(dir_path, "result", teacher, name, "index.json"), 'w+') as f:
+            json.dump(course_index, f)
+            f.close()
+        
+        with open(os.path.join(dir_path, "result", teacher, name, year_sem + course_id + ".json"), 'w+') as f:
+            json.dump(comments, f)
+            f.close()
     except Exception as e:
         with open(os.path.join(dir_path, "_data", "log.txt"), "a") as f:
+            logging.exception(COURSE_RATE_URL(param), e)
             f.write(str(e))
             f.close()
         
@@ -56,22 +56,23 @@ def fetchRate(teacher_list):
     for teacher in tqdm_list:
         teacher_id = teacher_list[teacher]
         tqdm_list.set_postfix_str("processing: " + teacher_id + " " + teacher)
-        try:
-            res = requests.get(URL(teacher_id)).content.decode("big5").encode("utf-8")
-            soup = BeautifulSoup(res, "html.parser")
-            table = soup.find_all('table')[2]
-            rows = table.find_all('tr')
-            for row in rows:
-                cols = row.find_all('td')
-                if cols[-1].find("a"):
-                    year = cols[0].text
-                    sem = cols[1].text
-                    course_id = cols[2].text
-                    name = cols[3].text
-                    #print(COURSE_RATE_URL(cols[-1].find("a")["href"]))
-                    course_rate(cols[-1].find("a")["href"], year + sem, course_id, name, teacher)
-        except Exception as e:
-            with open(os.path.join(dir_path, "_data", "log.txt"), "a") as f:
-                f.write(str(e))
-                f.close()
+        for qry_year_sem in RATE_QRY():
+            try:
+                res = requests.get(URL(teacher_id, qry_year_sem)).content.decode("big5").encode("utf-8")
+                soup = BeautifulSoup(res, "html.parser")
+                table = soup.find_all('table')[2]
+                rows = table.find_all('tr')
+                for row in rows:
+                    cols = row.find_all('td')
+                    if cols[-1].find("a"):
+                        year = cols[0].text
+                        sem = cols[1].text
+                        course_id = cols[2].text
+                        name = cols[3].text
+                        #print(COURSE_RATE_URL(cols[-1].find("a")["href"]))
+                        course_rate(cols[-1].find("a")["href"], year + sem, qry_year_sem, course_id, name, teacher)
+            except Exception as e:
+                with open(os.path.join(dir_path, "_data", "log.txt"), "a") as f:
+                    f.write(str(e))
+                    f.close()
     print("Fetching class done at " + str(time()))
