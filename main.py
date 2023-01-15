@@ -3,6 +3,7 @@ import os, json
 from fetchClass import fetchClass
 from fetchTeacherId import fetchTeacherId
 from fetchRate import fetchRate
+import CourseResult
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -17,6 +18,7 @@ def useOldTeachers():
 if not os.path.exists(os.path.join(dir_path, "_data")):
   os.makedirs(os.path.join(dir_path, "_data"))
 
-classes = fetchClass()
-TeacherId = fetchTeacherId(useOldClasses())
-fetchRate(TeacherId)
+# classes = fetchClass()
+# TeacherId = fetchTeacherId(useOldClasses())
+# fetchRate(TeacherId)
+CourseResult.main()

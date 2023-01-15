@@ -24,3 +24,6 @@ YEAR_SEM = YEAR + SEM
 
 def RATE_QRY():
     return str(os.getenv('RATE_QRY')).split(",")
+
+COURSERESULT_YEARSEM = ["1102", "1111"]
+def COURSERESULT_CSV(sem): return sem + "CourseResult.csv"

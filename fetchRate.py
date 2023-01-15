@@ -50,10 +50,13 @@ def fetchRate(teacher_list):
     print("Fetching result")
     if not os.path.exists(os.path.join(dir_path, "result")):
         os.makedirs(os.path.join(dir_path, "result"))
-    row_count = len(teacher_list)
-    tqdm_list = tqdm(teacher_list, total=row_count, leave=False)
+    with open(os.path.join(dir_path, "old_data", "1111_teachers.json"), "r") as f:
+        old_teacher_list = json.loads(f.read())
+    total_teacher_list = {**old_teacher_list,**teacher_list}
+    row_count = len(total_teacher_list)
+    tqdm_list = tqdm(total_teacher_list, total=row_count, leave=False)
     for teacher in tqdm_list:
-        teacher_id = teacher_list[teacher]
+        teacher_id = total_teacher_list[teacher]
         tqdm_list.set_postfix_str("processing: " + teacher_id + " " + teacher)
         for qry_year_sem in RATE_QRY():
             try:
