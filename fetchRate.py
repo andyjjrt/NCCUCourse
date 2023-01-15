@@ -43,8 +43,7 @@ def course_rate(param, year_sem, rate_year_sem, course_id, name, teacher):
             f.close()
     except Exception as e:
         with open(os.path.join(dir_path, "_data", "log.txt"), "a") as f:
-            logging.exception(COURSE_RATE_URL(param), e)
-            f.write(str(e))
+            f.write(str(e) + "\n")
             f.close()
         
 def fetchRate(teacher_list):
@@ -73,6 +72,6 @@ def fetchRate(teacher_list):
                         course_rate(cols[-1].find("a")["href"], year + sem, qry_year_sem, course_id, name, teacher)
             except Exception as e:
                 with open(os.path.join(dir_path, "_data", "log.txt"), "a") as f:
-                    f.write(str(e))
+                    f.write(str(e) + "\n")
                     f.close()
     print("Fetching class done at " + str(time()))

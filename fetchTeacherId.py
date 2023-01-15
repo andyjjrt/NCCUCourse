@@ -24,11 +24,18 @@ def fetchTeacherId(courseList):
     while time() - st < timeHold:
       sleep(0.01)
     st = time()
-    courses.set_description("Adding %s" % courseId)
-    requests.post(get_addtrack_url(encstu, courseId))
+    try:
+      courses.set_description("Adding %s" % courseId)
+      addres = requests.post(get_addtrack_url(encstu, courseId)).json()
+      if(addres[0]["procid"] != "1"): raise("Add fail: " + courseId)
+    except Exception as e:
+      with open(os.path.join(dir_path, "_data", "log.txt"), "a") as f:
+        f.write(str(e) + "\n")
+        f.close()
+      
     
-  res = requests.get(get_track_url(encstu)).json()
-  reader = tqdm(res, leave=False)
+  courseres = requests.get(get_track_url(encstu)).json()
+  reader = tqdm(courseres, leave=False)
   for course in reader:
     try:
       if str(course["teaStatUrl"]).startswith('https://newdoc.nccu.edu.tw/teaschm/' + YEAR_SEM + '/statisticAll.jsp'):
@@ -47,20 +54,22 @@ def fetchTeacherId(courseList):
             data[teacher_name] = teacher_id
     except Exception as e:
       with open(os.path.join(dir_path, "_data", "log.txt"), "a") as f:
-        f.write(str(e))
+        f.write(str(e) + "\n")
         f.close()
    
   with open(os.path.join(dir_path, "_data", "teachers.json"), "w+", encoding="utf-8") as f:
     json.dump(data, f)
     f.close()
     
-  courses = tqdm(courseList, leave=False)
-  for courseId in courses:
+  delcourses = tqdm(courseres, leave=False)
+  for course in delcourses:
     while time() - st < timeHold:
       sleep(0.01)
     st = time()
-    courses.set_description("Deleting %s" % courseId)
-    requests.delete(get_deltrack_url(encstu, courseId))
+    courseId = str(course["subNum"])
+    delcourses.set_description("Deleting %s" % courseId)
+    deleteres = requests.delete(get_deltrack_url(encstu, courseId)).json()
+    if(deleteres[0]["procid"] != "9"): print("Delete fail: " + courseId)
     
   print("Fetching teacher id done at " + str(time()))
   

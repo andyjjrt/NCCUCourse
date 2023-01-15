@@ -41,7 +41,7 @@ def fetchClass():
         classes.append(courseId)
     except Exception as e:
       with open(os.path.join(dir_path, "_data", "log.txt"), "a") as f:
-        f.write(str(e))
+        f.write(str(e) + "\n")
         f.close()
 
   with open(os.path.join(dir_path, "_data", "classes.json"), "w+") as f:
