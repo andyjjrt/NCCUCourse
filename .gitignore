@@ -2,3 +2,10 @@
 __pycache__
 *.pyc
 .env
+
+_data/
+.python-version
+result/
+result_en/
+
+.google.auth
