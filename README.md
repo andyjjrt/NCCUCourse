@@ -14,9 +14,17 @@ As a NCCU student, you have your iNCCU account. Please create a `.env` file and 
 ```
 USERNAME=*********
 PASSWORD=*****
+
+YEAR=111
+SEM=2
+
+GOOGLE_APPLICATION_CREDENTIALS=.google.auth
 ```
+
+If your google credential is store else where, please modify `.env` file.
+Be aware of your credential when using git!!
 
 ## Execution
 ```sh
-python3.9 main.py
+python main.py
 ```

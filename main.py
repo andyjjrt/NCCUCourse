@@ -3,6 +3,7 @@ import os, json
 from fetchClass import fetchClass
 from fetchTeacherId import fetchTeacherId
 from fetchRate import fetchRate
+from translateRate import translateRate
 import CourseResult
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -22,3 +23,5 @@ classes = fetchClass()
 TeacherId = fetchTeacherId(useOldClasses())
 fetchRate(TeacherId)
 CourseResult.main()
+
+translateRate()
