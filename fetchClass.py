@@ -2,17 +2,15 @@ import requests, os, json
 from dotenv import load_dotenv
 from tqdm import tqdm
 from time import time, sleep
+from constant import YEAR, SEM
 load_dotenv()
-
-year = os.getenv("YEAR")
-semester = os.getenv("SEM")
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 timeHold = 0.2
 
 def fetchClass():
-  print("Fetching class, YEAR=" + year + " SEM=" + semester)
+  print("Fetching class, YEAR=" + YEAR + " SEM=" + SEM)
   classes = list()
   categories = list()
   units = requests.get("https://qrysub.nccu.edu.tw/assets/api/unit.json").json()
@@ -31,7 +29,7 @@ def fetchClass():
       while time() - st < timeHold:
         sleep(0.01)
       st = time()
-      res = requests.get("https://es.nccu.edu.tw/course/zh-TW/:sem=" + year + semester + " :dp1=" + _cat["dp1"] + " :dp2=" + _cat["dp2"] + " :dp3=" + _cat["dp3"])
+      res = requests.get("https://es.nccu.edu.tw/course/zh-TW/:sem=" + YEAR + SEM + " :dp1=" + _cat["dp1"] + " :dp2=" + _cat["dp2"] + " :dp3=" + _cat["dp3"])
       jsonRes = res.json()
       if len(jsonRes) >= 500:
         raise Exception(_cat + "too large.")

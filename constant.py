@@ -2,10 +2,10 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-YEAR = os.getenv('YEAR')
-SEM = os.getenv('SEM')
-USERNAME = os.getenv('USERNAME')
-PASSWORD = os.getenv('PASSWORD')
+YEAR = os.getenv('YEAR') or ""
+SEM = os.getenv('SEM') or ""
+USERNAME = os.getenv('USERNAME') or ""
+PASSWORD = os.getenv('PASSWORD') or ""
 
 SERVER_URL = "https://es.nccu.edu.tw/"
 KEY = "angu1arjjlST@2019"
