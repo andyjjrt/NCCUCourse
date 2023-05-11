@@ -1,6 +1,5 @@
 from bs4 import BeautifulSoup
-import re
-import requests
+import re, requests
 
 def fetchDescription(courseId: str):
   if len(courseId) != 13:
@@ -35,6 +34,3 @@ def fetchDescription(courseId: str):
       result["objectives"].append(line)
   
   return result
-  
-if __name__ == "__main__":
-  print(fetchDescription("1081000211011"))

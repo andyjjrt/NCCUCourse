@@ -8,3 +8,4 @@ _data/
 result*/
 
 .google.auth*
+*.log
