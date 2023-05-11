@@ -3,6 +3,7 @@ from time import time
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 from constant import URL, COURSE_RATE_URL, RATE_QRY
+from fetchDescription import fetchDescription
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 i = 0
@@ -16,6 +17,8 @@ def course_rate(param, year_sem, rate_year_sem, course_id, name, teacher):
         comments = list()
         for row in rows:
             comments.append(row.find('td').text)
+            
+        detail = fetchDescription(year_sem + course_id)
         
         # Initialize folder if not exist
         if not os.path.exists(os.path.join(dir_path, "result", teacher)):
@@ -39,7 +42,7 @@ def course_rate(param, year_sem, rate_year_sem, course_id, name, teacher):
             f.close()
         
         with open(os.path.join(dir_path, "result", teacher, name, year_sem + course_id + ".json"), 'w+') as f:
-            json.dump(comments, f)
+            f.write(json.dumps({"comments": comments, "detail": detail}))
             f.close()
     except Exception as e:
         with open(os.path.join(dir_path, "_data", "log.txt"), "a") as f:
