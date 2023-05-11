@@ -5,7 +5,6 @@ __pycache__
 
 _data/
 .python-version
-result/
-result_en/
+result*/
 
-.google.auth
+.google.auth*
