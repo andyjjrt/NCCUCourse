@@ -19,6 +19,7 @@ YEAR=111
 SEM=2
 
 GOOGLE_APPLICATION_CREDENTIALS=.google.auth
+OPENSSL_CONF=openssl.conf
 ```
 
 If your google credential is store else where, please modify `.env` file.
@@ -27,4 +28,11 @@ Be aware of your credential when using git!!
 ## Execution
 ```sh
 python main.py
+```
+
+If you encounter in ssl error, please use `openssl.conf` as your connection configuration file.
+Yout entry point will be
+
+```sh
+OPENSSL_CONF=openssl.conf python main.py
 ```
