@@ -1,4 +1,6 @@
+import sys
 from bs4 import BeautifulSoup
+from time import sleep
 import os, json, logging, tqdm, requests
 
 from fetchClass import fetchClass
@@ -12,6 +14,42 @@ dirPath = os.path.dirname(os.path.realpath(__file__))
 if __name__ == "__main__":
   # Setup logger
   logging.basicConfig(filename='example.log', format='%(asctime)s [%(levelname)s] %(message)s', encoding='utf-8')
+  
+  # 1. Fetch classes
+  # fetch all deps first, make a single search less than 500
+  units = requests.get("https://qrysub.nccu.edu.tw/assets/api/unit.json")
+  units.raise_for_status()
+  categories = list()
+  for dp1 in [x for x in units.json() if x["utCodL1"] != "0"]:
+    for dp2 in [x for x in dp1["utL2"] if x["utCodL2"] != "0"]:
+      for dp3 in [x for x in dp2["utL3"] if x["utCodL3"] != "0"]:
+        categories.append({"dp1": dp1["utCodL1"], "dp2": dp2["utCodL2"], "dp3": dp3["utCodL3"]})
+  
+  # run through all deps, get their classId
+  coursesList = list()
+  tqdmCategories = tqdm.tqdm(categories, leave=False)
+  for category in tqdmCategories:
+    try:
+      tqdmCategories.set_postfix_str("processing: {}".format(category))
+      sleep(0.2)
+      res = requests.get("https://es.nccu.edu.tw/course/zh-TW/:sem=1112 :dp1={} :dp2={} :dp3={}".format(category["dp1"], category["dp2"], category["dp3"]))
+      res.raise_for_status()
+      courses = res.json()
+      if len(courses) >= 500:
+        raise Exception("{} too large".format(category))
+      logging.debug([x["subNum"] for x in courses])
+      coursesList += [x["subNum"] for x in courses]
+    except Exception as e:
+      logging.error(e)
+      raise(e)
+  logging.debug(coursesList)
+  
+  # Write courseList back to file
+  if(os.path.exists(os.path.join(dirPath, "_data"))):
+    os.makedirs(os.path.join(dirPath, "_data"), exist_ok=True)
+  with open(os.path.join(dirPath, "_data", "classes.json"), "w+") as f:
+    f.write(json.dumps(coursesList))
+    f.close()
   
   # Read teacher list
   with open(os.path.join(dirPath, "_data", "teachers.json"), "r") as f:
