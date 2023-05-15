@@ -13,6 +13,7 @@ from translateRate import translateRate
 options = "h"
 longOptions = ["help", "skip_class", "skip_teacher", "skip_rate", "skip_class_detail"]
 argumentList = sys.argv[1:]
+allSemesters = ["1011", "1012","1021", "1022","1031", "1032", "1041", "1042", "1051", "1052", "1061", "1062", "1071", "1072", "1081", "1082", "1091", "1092", "1101", "1102", "1111", "1112"]
 
 programOptions = {
   "skip_class": False,
@@ -58,7 +59,7 @@ if __name__ == "__main__":
   if(os.path.exists(os.path.join(dirPath, "_data"))):
     os.makedirs(os.path.join(dirPath, "_data"), exist_ok=True)
     
-  db = DB("test5.db")
+  db = DB("test.db")
   
   # ==============================
   # \ 1. Fetch Classes           \
@@ -80,7 +81,7 @@ if __name__ == "__main__":
     for category in tqdmCategories:
       tqdmCategories.set_postfix_str("{}".format(category))
       if not programOptions["skip_class_detail"]:
-        semesters = tqdm.tqdm(["1081", "1082", "1091", "1092", "1101", "1102", "1111", "1112"], leave=False)
+        semesters = tqdm.tqdm(allSemesters, leave=False)
       else:
         semesters = ["1112"]
       for semester in semesters:
@@ -218,39 +219,42 @@ if __name__ == "__main__":
     # Run through all teacherId, and fetch courses of teachers
     teachers = tqdm.tqdm(teacherList, total=len(teacherList), leave=False)
     for teacher in teachers:
-      try:
-        teacherId = teacherList[teacher]
-        teachers.set_postfix_str("processing: {} {}".format(teacherId, teacher))
-        location = "http://newdoc.nccu.edu.tw/teaschm/1112/statistic.jsp-tnum={}.htm".format(teacherId)
-        res = requests.get(location)
-        res.raise_for_status()
-        soup = BeautifulSoup(res.content.decode("big5").encode("utf-8"), "html.parser")
-        courses = soup.find_all('table')[2].find_all('tr')
-        availableCourses = [x.find_all('td') for x in courses if x.find_all('td')[-1].find("a")]
-        tqdmCourses = tqdm.tqdm(availableCourses, total=len(availableCourses), leave=False)
-        
-        for row in tqdmCourses:
-          courseId = "{}{}{}".format(row[0].text, row[1].text, row[2].text)
-          tqdmCourses.set_postfix_str("processing: {}".format(courseId))
-          rates = fetchRate("http://newdoc.nccu.edu.tw/teaschm/1112/" + row[-1].find("a")["href"])
+      teacherId = teacherList[teacher]
+      teachers.set_postfix_str("processing: {} {}".format(teacherId, teacher))
+      semesters = tqdm.tqdm(allSemesters, total=len(allSemesters), leave=False)
+      for semester in semesters:
+        semesters.set_postfix_str("processing: {}".format(semester))
+        try:
+          location = "http://newdoc.nccu.edu.tw/teaschm/{}/statistic.jsp-tnum={}.htm".format(semester, teacherId)
+          res = requests.get(location)
+          res.raise_for_status()
+          soup = BeautifulSoup(res.content.decode("big5").encode("utf-8"), "html.parser")
+          courses = soup.find_all('table')[2].find_all('tr')
+          availableCourses = [x.find_all('td') for x in courses if x.find_all('td')[-1].find("a") and int(x.find_all('td')[0].text) > 100]
+          tqdmCourses = tqdm.tqdm(availableCourses, total=len(availableCourses), leave=False)
           
-          # Write to database
-          for rate in rates:
-            db.addRate(courseId, teacherId, str(rate))
-
-          # # Create folder if not exist
-          # path = os.path.join(dirPath, "result", teacher, detail["qrysub"]["subNam"])
-          # if not os.path.exists(path):
-          #   os.makedirs(path, exist_ok=True)
-                      
-          # # Write detail back to file
-          # with open(os.path.join(path, "{}.json".format(courseId)), "w+") as f:
-          #   f.write(json.dumps({"comments": rates}))
-          #   f.close()
+          for row in tqdmCourses:
+            courseId = "{}{}{}".format(row[0].text, row[1].text, row[2].text)
+            tqdmCourses.set_postfix_str("processing: {}".format(courseId))
+            rates = fetchRate("http://newdoc.nccu.edu.tw/teaschm/{}/{}".format(semester, row[-1].find("a")["href"]))
             
-      except Exception as e:
-        logging.error(e)
-        continue
+            # Write to database
+            for rate in rates:
+              db.addRate(courseId, teacherId, str(rate))
+
+            # # Create folder if not exist
+            # path = os.path.join(dirPath, "result", teacher, detail["qrysub"]["subNam"])
+            # if not os.path.exists(path):
+            #   os.makedirs(path, exist_ok=True)
+                        
+            # # Write detail back to file
+            # with open(os.path.join(path, "{}.json".format(courseId)), "w+") as f:
+            #   f.write(json.dumps({"comments": rates}))
+            #   f.close()
+              
+        except Exception as e:
+          logging.error(e)
+          continue
     
     print("Fetch Rates and Details done at {}".format(datetime.datetime.now()))
   else:

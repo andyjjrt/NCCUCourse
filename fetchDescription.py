@@ -12,29 +12,46 @@ def fetchDescription(courseId: str):
   
   try:
     # get qrysub detail
-    qrysub = requests.get("http://es.nccu.edu.tw/course/zh-TW/{} /".format(courseId)).json()
-    if len(qrysub) != 1:
+    response = requests.get("http://es.nccu.edu.tw/course/zh-TW/{} /".format(courseId))
+    response.raise_for_status()
+    if len(response.json()) != 1:
       raise Exception("No matched course")
-    result["qrysub"] = qrysub[0]
+    result["qrysub"] = response.json()[0]
     location = str(result["qrysub"]["teaSchmUrl"]).replace("https://", "http://")
     
     # fetching content
     res = requests.get(location)
-    soup = BeautifulSoup(res.content, "html.parser")
+    soap = BeautifulSoup(res.content, "html.parser")
+    isOld = soap.find("title").text == "教師資訊整合系統"
     
-    # get syllabus description
-    descriptions = soup.find("div", {"class": "col-sm-7 sylview--mtop col-p-6"}).find_all("p", recursive=False) + soup.find("div", {"class": "col-sm-7 sylview--mtop col-p-6"}).find_all("table")
-    for description in descriptions:
-      for line in [x for x in re.split(r'[\n\r]+', description.get_text(strip=True)) if len(x) > 0 and x != " "]:
-        result["description"].append(line)    
-    
-    # get syllabus objectives
-    objectives = soup.find("div", {"class": "container sylview-section"}).select_one(".col-p-8")
-    for objective in objectives:
-      for line in [x for x in re.split(r'[\n\r]+', objective.get_text(strip=True)) if len(x) > 0 and x != " "]:
-        result["objectives"].append(line)
+    if isOld:
+      contents = soap.find("div", {"class": "accordionPart"}).find_all("span")
+      for objective in contents[0].find("div", {"class": "qa_content"}):
+        for line in [x for x in re.split(r'[\n\r]+', objective.get_text(strip=True)) if len(x) > 0 and x != " "]:
+          result["description"].append(line)
+      for objective in contents[1].find("div", {"class": "qa_content"}):
+        for line in [x for x in re.split(r'[\n\r]+', objective.get_text(strip=True)) if len(x) > 0 and x != " "]:
+          result["objectives"].append(line)  
+    else:
+      # get syllabus description
+      descriptionTitle = soap.find("div", {"class": "col-sm-7 sylview--mtop col-p-6"}).find("h2", {"class": "text-primary"})
+      descriptions = descriptionTitle.find_next_siblings(True)
+      for description in descriptions:
+        if description.attrs and description.attrs["class"] and ["row", "sylview-mtop", "fa-border"] == description.attrs["class"]:
+          break
+        for line in [x for x in re.split(r'[\n\r]+', description.get_text(strip=True)) if len(x) > 0 and x != " "]:
+          result["description"].append(line)    
+      
+      # get syllabus objectives
+      objectives = soap.find("div", {"class": "container sylview-section"}).select_one(".col-p-8")
+      for objective in objectives:
+        for line in [x for x in re.split(r'[\n\r]+', objective.get_text(strip=True)) if len(x) > 0 and x != " "]:
+          result["objectives"].append(line)
     
   except Exception as e:
     logging.error(e)
   
   return result
+
+if __name__ == "__main__":
+  print(fetchDescription("1051000211011"))
