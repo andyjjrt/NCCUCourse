@@ -2,18 +2,21 @@ import sys
 from bs4 import BeautifulSoup
 from time import sleep
 import os, json, logging, tqdm, requests, datetime, getopt
+from DB import DB
 
 from User import User
+from constant import YEAR_SEM
 from fetchDescription import fetchDescription
 from fetchRate import fetchRate
 from translateRate import translateRate
 
 options = "h"
-longOptions = ["help", "skip_class", "skip_teacher", "skip_rate"]
+longOptions = ["help", "skip_class", "skip_teacher", "skip_rate", "skip_class_detail"]
 argumentList = sys.argv[1:]
 
 programOptions = {
   "skip_class": False,
+  "skip_class_detail": False,
   "skip_teacher": False,
   "skip_rate": False
 }
@@ -30,6 +33,7 @@ if __name__ == "__main__":
 
   Options:
     --skip_class          Skip fetch class operation.
+    --skip_class_detail   Skip fetch class detail operation.
     --skip_teacher        Skip fetch teacher operation.
     --skip_rate           Skip fetch rate operation.
     --help, -h            Display this help and exit.            
@@ -37,6 +41,8 @@ if __name__ == "__main__":
         sys.exit()
       elif currentArgument in ("--skip_class"):
         programOptions["skip_class"] = True
+      elif currentArgument in ("--skip_class_detail"):
+        programOptions["skip_class_detail"] = True
       elif currentArgument in ("--skip_teacher"):
         programOptions["skip_teacher"] = True
       elif currentArgument in ("--skip_rate"):
@@ -44,12 +50,15 @@ if __name__ == "__main__":
   except getopt.error as err:
     print (str(err))
     sys.exit()
-    
+  
+
   # Setup logger
   logging.basicConfig(filename='log.log', format='%(asctime)s [%(levelname)s] %(message)s', encoding='utf-8')
   
   if(os.path.exists(os.path.join(dirPath, "_data"))):
     os.makedirs(os.path.join(dirPath, "_data"), exist_ok=True)
+    
+  db = DB("test5.db")
   
   # ==============================
   # \ 1. Fetch Classes           \
@@ -69,19 +78,34 @@ if __name__ == "__main__":
     coursesList = list()
     tqdmCategories = tqdm.tqdm(categories, leave=False)
     for category in tqdmCategories:
-      try:
-        tqdmCategories.set_postfix_str("processing: {}".format(category))
-        sleep(0.1)
-        res = requests.get("https://es.nccu.edu.tw/course/zh-TW/:sem=1112 :dp1={} :dp2={} :dp3={}".format(category["dp1"], category["dp2"], category["dp3"]))
-        res.raise_for_status()
-        courses = res.json()
-        if len(courses) >= 500:
-          raise Exception("{} too large".format(category))
-        logging.debug([x["subNum"] for x in courses])
-        coursesList += [x["subNum"] for x in courses]
-      except Exception as e:
-        logging.error(e)
-        raise(e)
+      tqdmCategories.set_postfix_str("{}".format(category))
+      if not programOptions["skip_class_detail"]:
+        semesters = tqdm.tqdm(["1081", "1082", "1091", "1092", "1101", "1102", "1111", "1112"], leave=False)
+      else:
+        semesters = ["1112"]
+      for semester in semesters:
+        if not programOptions["skip_class_detail"]:
+          semesters.set_postfix_str("processing: {}".format(semester))
+        try:
+          sleep(0.1)
+          res = requests.get("https://es.nccu.edu.tw/course/zh-TW/:sem={} :dp1={} :dp2={} :dp3={}".format(semester, category["dp1"], category["dp2"], category["dp3"]))
+          res.raise_for_status()
+          courses = res.json()
+          if len(courses) >= 500:
+            raise Exception("{} too large".format(category))
+          
+          # Add to courseList
+          if(semester == YEAR_SEM):
+            coursesList += [x["subNum"] for x in courses]
+          
+          # Write to databse
+          if not programOptions["skip_class_detail"]:
+            for course in tqdm.tqdm(courses, leave=False):
+              detail = fetchDescription("{}{}".format(semester, course["subNum"]))
+              db.addCourse(course, "".join(detail["description"]), "".join(detail["objectives"]))
+        except Exception as e:
+          logging.error(e)
+
     logging.debug(coursesList)
     
     # Write courseList back to file
@@ -138,10 +162,11 @@ if __name__ == "__main__":
         teacherStatUrl = str(course["teaStatUrl"])
         teacherName = str(course["teaNam"])
         tqdmCourses.set_postfix_str("Processing {}".format(teacherName))
-        if teacherStatUrl.startswith("https://newdoc.nccu.edu.tw/teaschm/1112/statisticAll.jsp"):
-          teacherId = teacherStatUrl.split("https://newdoc.nccu.edu.tw/teaschm/1112/statisticAll.jsp-tnum=")[1].split(".htm")[0]
+        if teacherStatUrl.startswith("https://newdoc.nccu.edu.tw/teaschm/{}/statisticAll.jsp".format(YEAR_SEM)):
+          teacherId = teacherStatUrl.split("https://newdoc.nccu.edu.tw/teaschm/{}/statisticAll.jsp-tnum=".format(YEAR_SEM))[1].split(".htm")[0]
           teacherIdDict[teacherName] = teacherId
-        elif teacherStatUrl.startswith("https://newdoc.nccu.edu.tw/teaschm/1112/set20.jsp"):
+          db.addTeacher(teacherId, teacherName)
+        elif teacherStatUrl.startswith("https://newdoc.nccu.edu.tw/teaschm/{}/set20.jsp".format(YEAR_SEM)):
           # use ip to avoid name resolve error, and add time out
           res = requests.get(teacherStatUrl.replace("newdoc.nccu.edu.tw", "140.119.229.20").replace("https://", "http://"), timeout=10)
           res.raise_for_status()
@@ -152,6 +177,7 @@ if __name__ == "__main__":
             teacherName = str(row[0].text)
             teacherId = row[-1].find("a")["href"].split("statisticAll.jsp-tnum=")[1].split(".htm")[0]
             teacherIdDict[teacherName] = teacherId
+            db.addTeacher(teacherId, teacherName)
       except Exception as e:
         logging.error(e)
         continue
@@ -206,20 +232,21 @@ if __name__ == "__main__":
         for row in tqdmCourses:
           courseId = "{}{}{}".format(row[0].text, row[1].text, row[2].text)
           tqdmCourses.set_postfix_str("processing: {}".format(courseId))
-          detail = fetchDescription(courseId)
           rates = fetchRate("http://newdoc.nccu.edu.tw/teaschm/1112/" + row[-1].find("a")["href"])
-          logging.debug(detail)
-          logging.debug(rates)
+          
+          # Write to database
+          for rate in rates:
+            db.addRate(courseId, teacherId, str(rate))
 
-          # Create folder if not exist
-          path = os.path.join(dirPath, "result", teacher, detail["qrysub"]["subNam"])
-          if not os.path.exists(path):
-            os.makedirs(path, exist_ok=True)
-            
-          # Write detail back to file
-          with open(os.path.join(path, "{}.json".format(courseId)), "w+") as f:
-            f.write(json.dumps({"comments": rates, "details": detail}))
-            f.close()
+          # # Create folder if not exist
+          # path = os.path.join(dirPath, "result", teacher, detail["qrysub"]["subNam"])
+          # if not os.path.exists(path):
+          #   os.makedirs(path, exist_ok=True)
+                      
+          # # Write detail back to file
+          # with open(os.path.join(path, "{}.json".format(courseId)), "w+") as f:
+          #   f.write(json.dumps({"comments": rates}))
+          #   f.close()
             
       except Exception as e:
         logging.error(e)
