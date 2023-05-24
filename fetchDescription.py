@@ -17,6 +17,11 @@ def fetchDescription(courseId: str):
     if len(response.json()) != 1:
       raise Exception("No matched course")
     result["qrysub"] = response.json()[0]
+    response = requests.get("http://es.nccu.edu.tw/course/en/{} /".format(courseId))
+    response.raise_for_status()
+    if len(response.json()) != 1:
+      raise Exception("No matched course")
+    result["qrysubEn"] = response.json()[0]
     location = str(result["qrysub"]["teaSchmUrl"]).replace("https://", "http://")
     
     # fetching content

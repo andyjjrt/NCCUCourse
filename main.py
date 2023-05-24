@@ -103,7 +103,7 @@ if __name__ == "__main__":
           if not programOptions["skip_class_detail"]:
             for course in tqdm.tqdm(courses, leave=False):
               detail = fetchDescription("{}{}".format(semester, course["subNum"]))
-              db.addCourse(course, "".join(detail["description"]), "".join(detail["objectives"]))
+              db.addCourse(detail["qrysub"], detail["qrysubEn"], "".join(detail["description"]), "".join(detail["objectives"]))
         except Exception as e:
           logging.error(e)
 
@@ -144,7 +144,7 @@ if __name__ == "__main__":
           continue
     
     # Add courses to track list
-    tqdmCourses = tqdm.tqdm(coursesList, leave=False)
+    tqdmCourses = tqdm.tqdm([*set(coursesList)], leave=False)
     for courseId in tqdmCourses:
       try:
         sleep(0.2)
@@ -239,8 +239,8 @@ if __name__ == "__main__":
             rates = fetchRate("http://newdoc.nccu.edu.tw/teaschm/{}/{}".format(semester, row[-1].find("a")["href"]))
             
             # Write to database
-            for rate in rates:
-              db.addRate(courseId, teacherId, str(rate))
+            for index, rate in enumerate(rates):
+              db.addRate(index, courseId, teacherId, str(rate))
 
             # # Create folder if not exist
             # path = os.path.join(dirPath, "result", teacher, detail["qrysub"]["subNam"])

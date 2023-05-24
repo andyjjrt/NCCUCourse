@@ -3,3 +3,4 @@ requests
 tqdm
 pyDes
 google-cloud-translate
+flask

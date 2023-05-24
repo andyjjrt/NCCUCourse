@@ -6,13 +6,63 @@ class DB:
   def __init__(self, location: str) -> None:
     self.con = sqlite3.connect(location)
     cur = self.con.cursor()
-    cur.execute("CREATE TABLE IF NOT EXISTS COURSE ( id TEXT, core TEXT, far TEXT, gdeTpe TEXT, gdeTpeMsg TEXT, info TEXT, isTrace TEXT, langTpe TEXT, lmtKind TEXT, note TEXT, pay TEXT, s TEXT, smtQty TEXT, subClassroom TEXT, subGde TEXT, subKind TEXT, subLocUrl TEXT, subNam TEXT, subNum TEXT, subOdr TEXT, subPoint TEXT, subRemainUrl TEXT, subSetUrl TEXT, subTime TEXT, subUnitRuleUrl TEXT, teaExpUrl TEXT, teaNam TEXT, teaSchmUrl TEXT, tranTpe TEXT, y TEXT, syllabus TEXT, objective TEXT, PRIMARY KEY ( id ) );")
-    cur.execute("CREATE TABLE IF NOT EXISTS TEACHER ( id TEXT, name TEXT, UNIQUE( id, name ) )")
-    cur.execute("CREATE TABLE IF NOT EXISTS RATE ( courseId TEXT, teacherId TEXT, content TEXT )")
+    # subNam => name 科目名稱
+    # lmtKind 通識類別
+    # core 是否為核心通識
+    # langTpe => lang 語言
+    # smtQty N學期科目
+    # subClassroom => classroom 教室
+    # subGde => unit 開課單位
+    # subKind => kind 必選群
+    # subPoint => point 學分
+    # subTime => time 時間
     
-  def addRate(self, courseId: str, teacherId: str, content: str):
+    cur.execute("""
+      CREATE TABLE IF NOT EXISTS COURSE ( 
+        id TEXT,
+        y TEXT,
+        s TEXT,
+        subNum TEXT,
+        name TEXT,
+        nameEn TEXT,
+        teacher TEXT,
+        teacherEn TEXT,
+        kind INTEGER,
+        time TEXT,
+        timeEn TEXT,
+        lmtKind TEXT,
+        lmtKindEn TEXT,
+        core INTEGER,
+        lang TEXT,
+        langEn TEXT,
+        smtQty INTEGER,
+        classroom TEXT,
+        classroomId TEXT,
+        unit TEXT,
+        unitEn TEXT,
+        point REAL,
+        subRemainUrl TEXT,
+        subSetUrl TEXT,
+        subUnitRuleUrl TEXT,
+        teaExpUrl TEXT,
+        teaSchmUrl TEXT,
+        tranTpe TEXT,
+        tranTpeEn TEXT,
+        info TEXT,
+        infoEn TEXT,
+        note TEXT,
+        noteEn TEXT,
+        syllabus TEXT,
+        objective TEXT,
+        PRIMARY KEY ( id )
+      );
+    """)
+    cur.execute("CREATE TABLE IF NOT EXISTS TEACHER ( id TEXT, name TEXT, UNIQUE( id, name ) )")
+    cur.execute("CREATE TABLE IF NOT EXISTS RATE ( courseId TEXT NOT NULL, rowId TEXT NOT NULL, teacherId TEXT, content TEXT, PRIMARY KEY (courseId, rowId) )")
+    
+  def addRate(self, rowId: str, courseId: str, teacherId: str, content: str):
     cur = self.con.cursor()
-    cur.execute("INSERT OR REPLACE INTO RATE (courseId, teacherId, content) VALUES (?, ?, ?)", (courseId, teacherId, content))
+    cur.execute("INSERT OR REPLACE INTO RATE (rowId, courseId, teacherId, content) VALUES (?, ?, ?, ?)", (rowId, courseId, teacherId, content))
     self.con.commit()
   
   def addTeacher(self, id: str, name: str):
@@ -20,22 +70,65 @@ class DB:
     cur.execute("INSERT OR REPLACE INTO TEACHER (id, name) VALUES (?, ?)", (id, name))
     self.con.commit()
   
-  def addCourse(self, courseData: dict, syllabus: str, description: str):
+  def addCourse(self, courseData: dict, courseDataEn: dict, syllabus: str, description: str):
+    if courseData["lmtKind"] == "必修":
+      kind = 1
+    elif courseData["lmtKind"] == "選修":
+      kind = 2
+    elif courseData["lmtKind"] == "群修":
+      kind = 3
+    else:
+      kind = 0
+        
     cur = self.con.cursor()
     cur.execute(
-      '''INSERT OR REPLACE INTO COURSE ( id, core, far, gdeTpe, gdeTpeMsg, info, isTrace, langTpe, lmtKind, note, pay, s, smtQty, subClassroom, subGde, subKind, subLocUrl, subNam, subNum, subOdr, subPoint, subRemainUrl, subSetUrl, subTime, subUnitRuleUrl, teaExpUrl, teaNam, teaSchmUrl, tranTpe, y, syllabus, objective) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);''',
+      '''INSERT OR REPLACE INTO COURSE ( id, y, s,  subNum, name, nameEn, teacher, teacherEn, kind, time, timeEn, lmtKind, lmtKindEn, core, lang, langEn, smtQty, classroom, classroomId, unit, unitEn, point, subRemainUrl, subSetUrl, subUnitRuleUrl, teaExpUrl, teaSchmUrl, tranTpe, tranTpeEn, info, infoEn, note, noteEn, syllabus, objective ) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);''',
       (
-        "{}{}{}".format(courseData["y"], courseData["s"], courseData["subNum"]), courseData["core"], courseData["far"],
-        courseData["gdeTpe"], courseData["gdeTpeMsg"], courseData["info"], courseData["isTrace"], courseData["langTpe"],
-        courseData["lmtKind"], courseData["note"], courseData["pay"], 
-        courseData["s"], courseData["smtQty"], courseData["subClassroom"], courseData["subGde"], courseData["subKind"],
-        courseData["subLocUrl"], courseData["subNam"], courseData["subNum"], courseData["subOdr"], courseData["subPoint"],
-        courseData["subRemainUrl"], courseData["subSetUrl"], courseData["subTime"], courseData["subUnitRuleUrl"], 
-        courseData["teaExpUrl"], courseData["teaNam"], courseData["teaSchmUrl"], courseData["tranTpe"], courseData["y"],
+        "{}{}{}".format(courseData["y"], courseData["s"], courseData["subNum"]),
+        courseData["y"],
+        courseData["s"],
+        courseData["subNum"],
+        courseData["subNam"],
+        courseDataEn["subNam"],
+        courseData["teaNam"],
+        courseDataEn["teaNam"],
+        kind,
+        courseData["subTime"],
+        courseDataEn["subTime"],
+        courseData["lmtKind"],
+        courseDataEn["lmtKind"],
+        (lambda x:1 if x == "是" else 0)(courseData["core"]),
+        courseData["langTpe"],
+        courseDataEn["langTpe"],
+        courseData["smtQty"],
+        courseData["subClassroom"],
+        courseDataEn["subClassroom"],
+        courseData["subGde"],
+        courseDataEn["subGde"],
+        float(courseData["subPoint"]),
+        courseData["subRemainUrl"],
+        courseData["subSetUrl"],
+        courseData["subUnitRuleUrl"],
+        courseData["teaExpUrl"],
+        courseData["teaSchmUrl"],
+        courseData["tranTpe"],
+        courseDataEn["tranTpe"],
+        courseData["info"],
+        courseDataEn["info"],
+        courseData["note"],
+        courseDataEn["note"],
         syllabus, description
       )
     )
     self.con.commit()
+  
+  def getCourse(self, y: str, s: str):
+    cur = self.con.cursor()
+    request = cur.execute('SELECT teaNam FROM COURSE WHERE y = 111 AND s = 2')
+    response = request.fetchall()
+    
+    return [str(x[0]) for x in response]
     
 
 if __name__ == "__main__":
