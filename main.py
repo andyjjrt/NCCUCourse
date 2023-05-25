@@ -106,7 +106,7 @@ if __name__ == "__main__":
               if db.isCourseExist(courseId):
                 continue
               detail = fetchDescription(courseId)
-              db.addCourse(detail["qrysub"], detail["qrysubEn"], "".join(detail["description"]), "".join(detail["objectives"]))
+              db.addCourse(detail["qrysub"], detail["qrysubEn"], category["dp1"], category["dp2"], category["dp3"], "".join(detail["description"]), "".join(detail["objectives"]))
         except Exception as e:
           logging.error(e)
 
@@ -220,13 +220,15 @@ if __name__ == "__main__":
           res = requests.get(location)
           res.raise_for_status()
           soup = BeautifulSoup(res.content.decode("big5").encode("utf-8"), "html.parser")
-          courses = soup.find_all('table')[2].find_all('tr')
+          courses = soup.find('table', {"border": "1"}).find_all('tr')
           availableCourses = [x.find_all('td') for x in courses if x.find_all('td')[-1].find("a") and int(x.find_all('td')[0].text) > 100]
           tqdmCourses = tqdm.tqdm(availableCourses, total=len(availableCourses), leave=False)
           
           for row in tqdmCourses:
             courseId = "{}{}{}".format(row[0].text, row[1].text, row[2].text)
             tqdmCourses.set_postfix_str("processing: {}".format(courseId))
+            if db.isRateExist(courseId):
+              continue
             rates = fetchRate("http://newdoc.nccu.edu.tw/teaschm/{}/{}".format(semester, row[-1].find("a")["href"]))
             
             # Write to database

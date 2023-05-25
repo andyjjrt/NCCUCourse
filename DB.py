@@ -19,7 +19,7 @@ class DB:
     
     cur.execute("""
       CREATE TABLE IF NOT EXISTS COURSE ( 
-        id TEXT,
+        id TEXT NOT NULL,
         y TEXT,
         s TEXT,
         subNum TEXT,
@@ -40,6 +40,9 @@ class DB:
         classroomId TEXT,
         unit TEXT,
         unitEn TEXT,
+        dp1 TEXT NOT NULL,
+        dp2 TEXT NOT NULL,
+        dp3 TEXT NOT NULL,
         point REAL,
         subRemainUrl TEXT,
         subSetUrl TEXT,
@@ -54,10 +57,10 @@ class DB:
         noteEn TEXT,
         syllabus TEXT,
         objective TEXT,
-        PRIMARY KEY ( id )
+        PRIMARY KEY ( id, dp1, dp2, dp3 )
       );
     """)
-    cur.execute("CREATE TABLE IF NOT EXISTS TEACHER ( id TEXT, name TEXT, UNIQUE( id, name ) )")
+    cur.execute("CREATE TABLE IF NOT EXISTS TEACHER ( id TEXT, name TEXT, PRIMARY KEY ( id, name ) )")
     cur.execute("CREATE TABLE IF NOT EXISTS RATE ( courseId TEXT NOT NULL, rowId TEXT NOT NULL, teacherId TEXT, content TEXT, PRIMARY KEY (courseId, rowId) )")
     
   def addRate(self, rowId: str, courseId: str, teacherId: str, content: str):
@@ -81,7 +84,7 @@ class DB:
     
     return res
   
-  def addCourse(self, courseData: dict, courseDataEn: dict, syllabus: str, description: str):
+  def addCourse(self, courseData: dict, courseDataEn: dict, dp1: str, dp2: str, dp3: str, syllabus: str, description: str):
     if courseData["lmtKind"] == "必修":
       kind = 1
     elif courseData["lmtKind"] == "選修":
@@ -93,8 +96,8 @@ class DB:
         
     cur = self.con.cursor()
     cur.execute(
-      '''INSERT OR REPLACE INTO COURSE ( id, y, s,  subNum, name, nameEn, teacher, teacherEn, kind, time, timeEn, lmtKind, lmtKindEn, core, lang, langEn, smtQty, classroom, classroomId, unit, unitEn, point, subRemainUrl, subSetUrl, subUnitRuleUrl, teaExpUrl, teaSchmUrl, tranTpe, tranTpeEn, info, infoEn, note, noteEn, syllabus, objective ) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);''',
+      '''INSERT OR REPLACE INTO COURSE ( id, y, s,  subNum, name, nameEn, teacher, teacherEn, kind, time, timeEn, lmtKind, lmtKindEn, core, lang, langEn, smtQty, classroom, classroomId, unit, unitEn, dp1, dp2, dp3, point, subRemainUrl, subSetUrl, subUnitRuleUrl, teaExpUrl, teaSchmUrl, tranTpe, tranTpeEn, info, infoEn, note, noteEn, syllabus, objective ) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);''',
       (
         "{}{}{}".format(courseData["y"], courseData["s"], courseData["subNum"]),
         courseData["y"],
@@ -117,6 +120,9 @@ class DB:
         courseDataEn["subClassroom"],
         courseData["subGde"],
         courseDataEn["subGde"],
+        dp1,
+        dp2,
+        dp3,
         float(courseData["subPoint"]),
         courseData["subRemainUrl"],
         courseData["subSetUrl"],
@@ -151,6 +157,12 @@ class DB:
   def isCourseExist(self, courseId: str):
     cur = self.con.cursor()
     request = cur.execute('SELECT COUNT(*) FROM COURSE WHERE id = ?', [courseId])
+    response = request.fetchone()
+    return response[0] > 0
+  
+  def isRateExist(self, courseId: str):
+    cur = self.con.cursor()
+    request = cur.execute('SELECT COUNT( DISTINCT courseId) FROM RATE WHERE courseId = ?', [courseId])
     response = request.fetchone()
     return response[0] > 0
 
