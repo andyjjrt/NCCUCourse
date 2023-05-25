@@ -5,7 +5,7 @@ import os, json, logging, tqdm, requests, datetime, getopt
 from DB import DB
 
 from User import User
-from constant import YEAR_SEM
+from constant import YEAR_SEM, YEAR, SEM
 from fetchDescription import fetchDescription
 from fetchRate import fetchRate
 from translateRate import translateRate
@@ -102,17 +102,15 @@ if __name__ == "__main__":
           # Write to databse
           if not programOptions["skip_class_detail"]:
             for course in tqdm.tqdm(courses, leave=False):
-              detail = fetchDescription("{}{}".format(semester, course["subNum"]))
+              courseId = "{}{}".format(semester, course["subNum"])
+              if db.isCourseExist(courseId):
+                continue
+              detail = fetchDescription(courseId)
               db.addCourse(detail["qrysub"], detail["qrysubEn"], "".join(detail["description"]), "".join(detail["objectives"]))
         except Exception as e:
           logging.error(e)
 
     logging.debug(coursesList)
-    
-    # Write courseList back to file
-    with open(os.path.join(dirPath, "_data", "classes.json"), "w+") as f:
-      f.write(json.dumps(coursesList))
-      f.close()
     
     print("Fetch Class done at {}".format(datetime.datetime.now()))
   else:
@@ -124,8 +122,7 @@ if __name__ == "__main__":
   
   if not programOptions["skip_teacher"]:
     # Read course list
-    with open(os.path.join(dirPath, "_data", "classes.json"), "r") as f:
-      coursesList = json.loads(f.read())
+    coursesList = db.getThisSemesterCourse(YEAR, SEM)
     
     user = User()
   
@@ -182,11 +179,6 @@ if __name__ == "__main__":
       except Exception as e:
         logging.error(e)
         continue
-        
-    # Write teacherIdDict back to file
-    with open(os.path.join(dirPath, "_data", "teachers.json"), "w+") as f:
-      f.write(json.dumps(teacherIdDict))
-      f.close()
     
     # Delete courses from track list
     tqdmCourses =  tqdm.tqdm(courses, leave=False)
@@ -210,8 +202,7 @@ if __name__ == "__main__":
   
   if not programOptions["skip_rate"]:
     # Read teacher list
-    with open(os.path.join(dirPath, "_data", "teachers.json"), "r") as f:
-      newTeacherList = json.loads(f.read())
+    newTeacherList = db.getTeachers()
     with open(os.path.join(dirPath, "old_data", "1111_teachers.json"), "r") as f:
       oldTeacherList = json.loads(f.read())
     teacherList = {**newTeacherList,**oldTeacherList}

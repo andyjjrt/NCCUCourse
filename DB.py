@@ -69,6 +69,17 @@ class DB:
     cur = self.con.cursor()
     cur.execute("INSERT OR REPLACE INTO TEACHER (id, name) VALUES (?, ?)", (id, name))
     self.con.commit()
+    
+  def getTeachers(self):
+    cur = self.con.cursor()
+    request = cur.execute("SELECT * FROM TEACHER")
+    response = request.fetchall()
+    
+    res = dict()
+    for x in response:
+      res[x[1]] = x[0]
+    
+    return res
   
   def addCourse(self, courseData: dict, courseDataEn: dict, syllabus: str, description: str):
     if courseData["lmtKind"] == "必修":
@@ -129,7 +140,20 @@ class DB:
     response = request.fetchall()
     
     return [str(x[0]) for x in response]
+  
+  def getThisSemesterCourse(self, y: str, s: str):
+    cur = self.con.cursor()
+    request = cur.execute('SELECT DISTINCT subNum FROM COURSE WHERE y = ? AND s = ?', [y, s])
+    response = request.fetchall()
     
+    return [str(x[0]) for x in response]
+
+  def isCourseExist(self, courseId: str):
+    cur = self.con.cursor()
+    request = cur.execute('SELECT COUNT(*) FROM COURSE WHERE id = ?', [courseId])
+    response = request.fetchone()
+    return response[0] > 0
 
 if __name__ == "__main__":
   db = DB("test.db")
+  print(db.getThisSemesterCourse("111", "2"))
