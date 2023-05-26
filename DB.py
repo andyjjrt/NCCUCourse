@@ -154,9 +154,9 @@ class DB:
     
     return [str(x[0]) for x in response]
 
-  def isCourseExist(self, courseId: str):
+  def isCourseExist(self, courseId: str, dp: dict):
     cur = self.con.cursor()
-    request = cur.execute('SELECT COUNT(*) FROM COURSE WHERE id = ?', [courseId])
+    request = cur.execute('SELECT COUNT(*) FROM COURSE WHERE id = ? AND dp1 = ? AND dp2 = ? AND dp3 = ?', [courseId, dp["dp1"], dp["dp2"], dp["dp3"]])
     response = request.fetchone()
     return response[0] > 0
   

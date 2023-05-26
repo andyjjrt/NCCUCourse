@@ -103,7 +103,7 @@ if __name__ == "__main__":
           if not programOptions["skip_class_detail"]:
             for course in tqdm.tqdm(courses, leave=False):
               courseId = "{}{}".format(semester, course["subNum"])
-              if db.isCourseExist(courseId):
+              if db.isCourseExist(courseId, category):
                 continue
               detail = fetchDescription(courseId)
               db.addCourse(detail["qrysub"], detail["qrysubEn"], category["dp1"], category["dp2"], category["dp3"], "".join(detail["description"]), "".join(detail["objectives"]))
