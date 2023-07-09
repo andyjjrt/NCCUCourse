@@ -229,11 +229,14 @@ if __name__ == "__main__":
             tqdmCourses.set_postfix_str("processing: {}".format(courseId))
             if db.isRateExist(courseId):
               continue
+            sleep(0.2)
             rates = fetchRate("http://newdoc.nccu.edu.tw/teaschm/{}/{}".format(semester, row[-1].find("a")["href"]))
             
             # Write to database
-            for index, rate in enumerate(rates):
-              db.addRate(index, courseId, teacherId, str(rate))
+            tqdmRates = tqdm.tqdm(rates, total=len(rates), leave=False)
+            for index, rate in enumerate(tqdmRates):
+              rateEn = translateRate(str(rate))
+              db.addRate(index, courseId, teacherId, str(rate), rateEn)
 
             # # Create folder if not exist
             # path = os.path.join(dirPath, "result", teacher, detail["qrysub"]["subNam"])

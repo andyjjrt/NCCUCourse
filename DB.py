@@ -61,11 +61,11 @@ class DB:
       );
     """)
     cur.execute("CREATE TABLE IF NOT EXISTS TEACHER ( id TEXT, name TEXT, PRIMARY KEY ( id, name ) )")
-    cur.execute("CREATE TABLE IF NOT EXISTS RATE ( courseId TEXT NOT NULL, rowId TEXT NOT NULL, teacherId TEXT, content TEXT, PRIMARY KEY (courseId, rowId) )")
+    cur.execute("CREATE TABLE IF NOT EXISTS RATE ( courseId TEXT NOT NULL, rowId TEXT NOT NULL, teacherId TEXT, content TEXT, contentEn TEXT, PRIMARY KEY (courseId, rowId) )")
     
-  def addRate(self, rowId: str, courseId: str, teacherId: str, content: str):
+  def addRate(self, rowId: str, courseId: str, teacherId: str, content: str, contentEn: str):
     cur = self.con.cursor()
-    cur.execute("INSERT OR REPLACE INTO RATE (rowId, courseId, teacherId, content) VALUES (?, ?, ?, ?)", (rowId, courseId, teacherId, content))
+    cur.execute("INSERT OR REPLACE INTO RATE (rowId, courseId, teacherId, content, contentEn) VALUES (?, ?, ?, ?, ?)", (rowId, courseId, teacherId, content, contentEn))
     self.con.commit()
   
   def addTeacher(self, id: str, name: str):
