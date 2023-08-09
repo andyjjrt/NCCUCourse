@@ -9,3 +9,5 @@ result*/
 
 .google.auth*
 *.log
+
+*.db

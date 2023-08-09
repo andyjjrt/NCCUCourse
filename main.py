@@ -13,7 +13,7 @@ from translateRate import translateRate
 options = "h"
 longOptions = ["help", "skip_class", "skip_teacher", "skip_rate", "skip_class_detail"]
 argumentList = sys.argv[1:]
-allSemesters = ["1011", "1012","1021", "1022","1031", "1032", "1041", "1042", "1051", "1052", "1061", "1062", "1071", "1072", "1081", "1082", "1091", "1092", "1101", "1102", "1111", "1112"]
+allSemesters = ["1011", "1012","1021", "1022","1031", "1032", "1041", "1042", "1051", "1052", "1061", "1062", "1071", "1072", "1081", "1082", "1091", "1092", "1101", "1102", "1111", "1112", "1121"]
 
 programOptions = {
   "skip_class": False,
@@ -83,7 +83,7 @@ if __name__ == "__main__":
       if not programOptions["skip_class_detail"]:
         semesters = tqdm.tqdm(allSemesters, leave=False)
       else:
-        semesters = ["1112"]
+        semesters = ["1121"]
       for semester in semesters:
         if not programOptions["skip_class_detail"]:
           semesters.set_postfix_str("processing: {}".format(semester))
@@ -100,13 +100,12 @@ if __name__ == "__main__":
             coursesList += [x["subNum"] for x in courses]
           
           # Write to databse
-          if not programOptions["skip_class_detail"]:
-            for course in tqdm.tqdm(courses, leave=False):
-              courseId = "{}{}".format(semester, course["subNum"])
-              if db.isCourseExist(courseId, category):
-                continue
-              detail = fetchDescription(courseId)
-              db.addCourse(detail["qrysub"], detail["qrysubEn"], category["dp1"], category["dp2"], category["dp3"], "".join(detail["description"]), "".join(detail["objectives"]))
+          for course in tqdm.tqdm(courses, leave=False):
+            courseId = "{}{}".format(semester, course["subNum"])
+            if db.isCourseExist(courseId, category):
+              continue
+            detail = fetchDescription(courseId)
+            db.addCourse(detail["qrysub"], detail["qrysubEn"], category["dp1"], category["dp2"], category["dp3"], "".join(detail["description"]), "".join(detail["objectives"]))
         except Exception as e:
           logging.error(e)
 
@@ -206,6 +205,9 @@ if __name__ == "__main__":
     with open(os.path.join(dirPath, "old_data", "1111_teachers.json"), "r") as f:
       oldTeacherList = json.loads(f.read())
     teacherList = {**newTeacherList,**oldTeacherList}
+    with open(os.path.join(dirPath, "old_data", "1112_teachers.json"), "r") as f:
+      oldTeacherList = json.loads(f.read())
+    teacherList = {**newTeacherList,**oldTeacherList}
     
     # Run through all teacherId, and fetch courses of teachers
     teachers = tqdm.tqdm(teacherList, total=len(teacherList), leave=False)
@@ -235,7 +237,8 @@ if __name__ == "__main__":
             # Write to database
             tqdmRates = tqdm.tqdm(rates, total=len(rates), leave=False)
             for index, rate in enumerate(tqdmRates):
-              rateEn = translateRate(str(rate))
+              # rateEn = translateRate(str(rate))
+              rateEn = ""
               db.addRate(index, courseId, teacherId, str(rate), rateEn)
 
             # # Create folder if not exist

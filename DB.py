@@ -85,12 +85,14 @@ class DB:
     return res
   
   def addCourse(self, courseData: dict, courseDataEn: dict, dp1: str, dp2: str, dp3: str, syllabus: str, description: str):
-    if courseData["lmtKind"] == "必修":
+    if courseData["subKind"] == "必修":
       kind = 1
-    elif courseData["lmtKind"] == "選修":
+    elif courseData["subKind"] == "選修":
       kind = 2
-    elif courseData["lmtKind"] == "群修":
+    elif courseData["subKind"] == "群修":
       kind = 3
+    elif "通識" in courseData["lmtKind"]:
+      kind = 4
     else:
       kind = 0
         
