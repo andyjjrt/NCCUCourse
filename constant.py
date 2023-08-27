@@ -37,8 +37,7 @@ def RATE_QRY():
     return str(os.getenv("RATE_QRY")).split(",")
 
 
-COURSERESULT_YEARSEM = ["1102", "1111"]
-
+COURSERESULT_YEARSEM = ["1102", "1111", "1112"]
 
 def COURSERESULT_CSV(sem):
     return sem + "CourseResult.csv"

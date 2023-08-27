@@ -1,11 +1,11 @@
-import sys
+import sys, csv
 from bs4 import BeautifulSoup
 from time import sleep
 import os, json, logging, tqdm, requests, datetime, getopt
 from DB import DB
 
 from User import User
-from constant import YEAR_SEM, YEAR, SEM
+from constant import YEAR_SEM, YEAR, SEM ,COURSERESULT_CSV, COURSERESULT_YEARSEM
 from fetchDescription import fetchDescription
 from fetchRate import fetchRate
 from translateRate import translateRate
@@ -19,7 +19,8 @@ programOptions = {
   "skip_class": False,
   "skip_class_detail": False,
   "skip_teacher": False,
-  "skip_rate": False
+  "skip_rate": False,
+  "skip_result": False
 }
 
 dirPath = os.path.dirname(os.path.realpath(__file__))
@@ -37,6 +38,7 @@ if __name__ == "__main__":
     --skip_class_detail   Skip fetch class detail operation.
     --skip_teacher        Skip fetch teacher operation.
     --skip_rate           Skip fetch rate operation.
+    --skip_result         Skip fetch result operation.
     --help, -h            Display this help and exit.            
 """)
         sys.exit()
@@ -48,6 +50,8 @@ if __name__ == "__main__":
         programOptions["skip_teacher"] = True
       elif currentArgument in ("--skip_rate"):
         programOptions["skip_rate"] = True
+      elif currentArgument in ("--skip_result"):
+        programOptions["skip_result"] = True
   except getopt.error as err:
     print (str(err))
     sys.exit()
@@ -102,8 +106,8 @@ if __name__ == "__main__":
           # Write to databse
           for course in tqdm.tqdm(courses, leave=False):
             courseId = "{}{}".format(semester, course["subNum"])
-            if db.isCourseExist(courseId, category):
-              continue
+            # if db.isCourseExist(courseId, category):
+            #   continue
             detail = fetchDescription(courseId)
             db.addCourse(detail["qrysub"], detail["qrysubEn"], category["dp1"], category["dp2"], category["dp3"], "".join(detail["description"]), "".join(detail["objectives"]))
         except Exception as e:
@@ -240,16 +244,6 @@ if __name__ == "__main__":
               # rateEn = translateRate(str(rate))
               rateEn = ""
               db.addRate(index, courseId, teacherId, str(rate), rateEn)
-
-            # # Create folder if not exist
-            # path = os.path.join(dirPath, "result", teacher, detail["qrysub"]["subNam"])
-            # if not os.path.exists(path):
-            #   os.makedirs(path, exist_ok=True)
-                        
-            # # Write detail back to file
-            # with open(os.path.join(path, "{}.json".format(courseId)), "w+") as f:
-            #   f.write(json.dumps({"comments": rates}))
-            #   f.close()
               
         except Exception as e:
           logging.error(e)
@@ -259,4 +253,23 @@ if __name__ == "__main__":
   else:
     print("Skipping Fetch Rate")
   
-# translateRate()
+# ==============================
+# \ 4. Course Result           \
+# ==============================
+  if not programOptions["skip_result"]:
+    for sem in COURSERESULT_YEARSEM:
+      row_count = sum(1 for line in open("./data/" + COURSERESULT_CSV(sem), 'r'))
+      with open("./data/" + COURSERESULT_CSV(sem), 'r') as f:
+        lines = [line for line in f]
+        i = 0
+        reader = tqdm.tqdm(csv.reader(lines), total=len(lines))
+        for row in reader:
+          courseid = str(row[0])
+          try:
+            sleep(0.2)
+            res = requests.get("https://es.nccu.edu.tw/course/zh-TW/:sem=" + sem + "%20" + str(courseid) + "%20/").json()
+            db.addResult(sem, courseid, res[0]["subNam"], res[0]["teaNam"], res[0]["subTime"], int(row[3]), int(row[4]), -1 if row[5] == "" else int(row[5]))
+          except Exception as err:
+            logging.error(err)
+            continue
+          i += 1

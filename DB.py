@@ -62,6 +62,7 @@ class DB:
     """)
     cur.execute("CREATE TABLE IF NOT EXISTS TEACHER ( id TEXT, name TEXT, PRIMARY KEY ( id, name ) )")
     cur.execute("CREATE TABLE IF NOT EXISTS RATE ( courseId TEXT NOT NULL, rowId TEXT NOT NULL, teacherId TEXT, content TEXT, contentEn TEXT, PRIMARY KEY (courseId, rowId) )")
+    cur.execute("CREATE TABLE IF NOT EXISTS RESULT ( yearsem TEXT NOT NULL, courseId TEXT NOT NULL, name TEXT, teacher TEXT, time TEXT, studentLimit INTEGER, studentCount INTEGER, lastEnroll INTEGER, PRIMARY KEY (yearsem, courseId) )")
     
   def addRate(self, rowId: str, courseId: str, teacherId: str, content: str, contentEn: str):
     cur = self.con.cursor()
@@ -71,6 +72,11 @@ class DB:
   def addTeacher(self, id: str, name: str):
     cur = self.con.cursor()
     cur.execute("INSERT OR REPLACE INTO TEACHER (id, name) VALUES (?, ?)", (id, name))
+    self.con.commit()
+  
+  def addResult(self, yearsem: str, courseId: str, name: str, teacher: str, time: str, studentLimit: int, studentCount: int, lastEnroll: int):
+    cur = self.con.cursor()
+    cur.execute("INSERT OR REPLACE INTO RESULT (yearsem, courseId, name, teacher, time, studentLimit, studentCount, lastEnroll) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (yearsem, courseId, name, teacher, time, studentLimit, studentCount, lastEnroll))
     self.con.commit()
     
   def getTeachers(self):
@@ -95,6 +101,8 @@ class DB:
       kind = 4
     else:
       kind = 0
+      
+    print(courseData, kind)
         
     cur = self.con.cursor()
     cur.execute(
