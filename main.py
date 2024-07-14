@@ -13,7 +13,7 @@ from translateRate import translateRate
 options = "h"
 longOptions = ["help", "skip_class", "skip_teacher", "skip_rate", "skip_class_detail"]
 argumentList = sys.argv[1:]
-allSemesters = ["1011", "1012","1021", "1022","1031", "1032", "1041", "1042", "1051", "1052", "1061", "1062", "1071", "1072", "1081", "1082", "1091", "1092", "1101", "1102", "1111", "1112", "1121"]
+allSemesters = ["1011", "1012","1021", "1022","1031", "1032", "1041", "1042", "1051", "1052", "1061", "1062", "1071", "1072", "1081", "1082", "1091", "1092", "1101", "1102", "1111", "1112", "1121", "1122", "1131"]
 
 programOptions = {
   "skip_class": False,
@@ -87,7 +87,7 @@ if __name__ == "__main__":
       if not programOptions["skip_class_detail"]:
         semesters = tqdm.tqdm(allSemesters, leave=False)
       else:
-        semesters = ["1121"]
+        semesters = [allSemesters[-1:]]
       for semester in semesters:
         if not programOptions["skip_class_detail"]:
           semesters.set_postfix_str("processing: {}".format(semester))
