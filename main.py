@@ -89,7 +89,7 @@ if __name__ == "__main__":
         for category in tqdmCategories:
             tqdmCategories.set_postfix_str("{}".format(category))
             if args.fast:
-                semesters = [allSemesters[-1:]]
+                semesters = allSemesters[-1:]
             else:
                 semesters = tqdm.tqdm(allSemesters, leave=False)
             for semester in semesters:

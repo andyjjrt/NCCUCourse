@@ -42,7 +42,7 @@ def fetchDescription(courseId: str):
       descriptionTitle = soap.find("div", {"class": "col-sm-7 sylview--mtop col-p-6"}).find("h2", {"class": "text-primary"})
       descriptions = descriptionTitle.find_next_siblings(True)
       for description in descriptions:
-        if description.attrs and description.attrs["class"] and ["row", "sylview-mtop", "fa-border"] == description.attrs["class"]:
+        if description.attrs and description.attrs.get("class") and ["row", "sylview-mtop", "fa-border"] == description.attrs["class"]:
           break
         for line in [x for x in re.split(r'[\n\r]+', description.get_text(strip=True)) if len(x) > 0 and x != " "]:
           result["description"].append(line)    
@@ -54,9 +54,10 @@ def fetchDescription(courseId: str):
           result["objectives"].append(line)
     
   except Exception as e:
+    logging.error(courseId)
     logging.error(e)
   
   return result
 
 if __name__ == "__main__":
-  print(fetchDescription("1051000211011"))
+  print(fetchDescription("1131000219521"))
