@@ -8,6 +8,7 @@ from User import User
 from constant import YEAR_SEM, YEAR, SEM, COURSERESULT_CSV, COURSERESULT_YEARSEM
 from fetchDescription import fetchDescription
 from fetchRate import fetchRate
+from fetchRemain import fetchRemain
 # from translateRate import translateRate
 
 allSemesters = [
@@ -46,6 +47,7 @@ parser.add_argument("--fast", action="store_true", help="Fetch this semester onl
 parser.add_argument("--teacher", action="store_true", help="Fetch teacher")
 parser.add_argument("--rate", action="store_true", help="Fetch rate")
 parser.add_argument("--result", action="store_true", help="Fetch result")
+parser.add_argument("--remaining", action="store_true", help="Fetch remain")
 parser.add_argument("--db", help="Database name", default="test.db")
 args = parser.parse_args()
 
@@ -347,3 +349,21 @@ if __name__ == "__main__":
                         logging.error(err)
                         continue
                     i += 1
+# ==============================
+# \ 5. Course Remaining        \
+# ==============================
+    if args.remaining:
+
+        course_dict = db.getThisSemesterCourseWithRemainUrl(y=YEAR, s=SEM)
+
+        tqdmCourseRemains = tqdm.tqdm(course_dict, total=len(course_dict), leave=False)
+        for course in tqdmCourseRemains:
+            try:
+                res = fetchRemain(course["subRemainUrl"])
+                res["id"] = course["id"]
+                db.addRemain(res)
+            except Exception as e:
+                logging.error(e)
+                continue
+    else:
+        print("skipping Fetch Class Remaining")
