@@ -280,5 +280,4 @@ class DB:
 
 if __name__ == "__main__":
   db = DB("test.db")
-  # print(db.getThisSemesterCourse("111", "2"))
-  print(db.getRemaining("111", "1", "test"))
+  print(db.getThisSemesterCourse("111", "2"))
