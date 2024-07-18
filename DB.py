@@ -63,6 +63,52 @@ class DB:
     cur.execute("CREATE TABLE IF NOT EXISTS TEACHER ( id TEXT, name TEXT, PRIMARY KEY ( id, name ) )")
     cur.execute("CREATE TABLE IF NOT EXISTS RATE ( courseId TEXT NOT NULL, rowId TEXT NOT NULL, teacherId TEXT, content TEXT, contentEn TEXT, PRIMARY KEY (courseId, rowId) )")
     cur.execute("CREATE TABLE IF NOT EXISTS RESULT ( courseId TEXT, yearsem TEXT, name TEXT, teacher TEXT, time TEXT, studentLimit INTEGER, studentCount INTEGER, lastEnroll INTEGER, PRIMARY KEY (courseId))")
+    cur.execute(
+        """CREATE TABLE IF NOT EXISTS REMAIN ( 
+            id TEXT NOT NULL,
+            signableAdding BOOLEAN,
+            waitingList INTEGER,
+            originLimit INTEGER,
+            originRegistered INTEGER,
+            originAvailable INTEGER,
+            allLimit INTEGER,
+            allRegistered INTEGER,
+            allAvailable INTEGER,
+            otherDeptLimit INTEGER,
+            otherDeptRegistered INTEGER,
+            otherDeptAvailable INTEGER,
+            sameGradeLimit INTEGER,
+            sameGradeRegistered INTEGER,
+            sameGradeAvailable INTEGER,
+            diffGradeLimit INTEGER,
+            diffGradeRegistered INTEGER,
+            diffGradeAvailable INTEGER,
+            minorLimit INTEGER,
+            minorRegistered INTEGER,
+            minorAvailable INTEGER,
+            doubleMajorLimit INTEGER,
+            doubleMajorRegistered INTEGER,
+            doubleMajorAvailable INTEGER,
+            otherDeptInCollegeLimit INTEGER,
+            otherDeptInCollegeRegistered INTEGER,
+            otherDeptInCollegeAvailable INTEGER,
+            otherCollegeLimit INTEGER,
+            otherCollegeRegistered INTEGER,
+            otherCollegeAvailable INTEGER,
+            programLimit INTEGER,
+            programRegistered INTEGER,
+            programAvailable INTEGER,
+            sameGradeAndAboveLimit INTEGER,
+            sameGradeAndAboveRegistered INTEGER,
+            sameGradeAndAboveAvailable INTEGER,
+            lowerGradeLimit INTEGER,
+            lowerGradeRegistered INTEGER,
+            lowerGradeAvailable INTEGER,
+            otherProgramLimit INTEGER,
+            otherProgramRegistered INTEGER,
+            otherProgramAvailable INTEGER,
+            PRIMARY KEY ( id ));
+    """)
     
   def addRate(self, rowId: str, courseId: str, teacherId: str, content: str, contentEn: str):
     cur = self.con.cursor()
@@ -173,7 +219,66 @@ class DB:
     request = cur.execute('SELECT COUNT( DISTINCT courseId) FROM RATE WHERE courseId = ?', [courseId])
     response = request.fetchone()
     return response[0] > 0
+  
+  def getThisSemesterCourseWithRemainUrl(self, y: str, s: str):
+      cur = self.con.cursor()
+      request = cur.execute("SELECT id, subRemainUrl FROM COURSE WHERE y = ? AND s = ?", [y, s])
+      response = request.fetchall()
+
+      result_list = []
+      for row in response:
+          row_dict = dict(zip([desc[0] for desc in request.description], row))
+          result_list.append(row_dict)
+
+      return result_list
+
+  def addRemain(self, courseData: dict):
+      print(courseData)
+      cur = self.con.cursor()
+      cur.execute(
+          """INSERT OR REPLACE INTO REMAIN (
+              id, signableAdding, waitingList,
+              originLimit, originRegistered, originAvailable, 
+              allLimit, allRegistered, allAvailable, 
+              otherDeptLimit, otherDeptRegistered, otherDeptAvailable,
+              sameGradeLimit, sameGradeRegistered, sameGradeAvailable,
+              diffGradeLimit, diffGradeRegistered, diffGradeAvailable, 
+              minorLimit, minorRegistered, minorAvailable, 
+              doubleMajorLimit, doubleMajorRegistered, doubleMajorAvailable, 
+              otherDeptInCollegeLimit, otherDeptInCollegeRegistered, otherDeptInCollegeAvailable, 
+              programLimit, programRegistered, programAvailable, 
+              sameGradeAndAboveLimit, sameGradeAndAboveRegistered, sameGradeAndAboveAvailable, 
+              lowerGradeLimit, lowerGradeRegistered, lowerGradeAvailable, 
+              otherProgramLimit, otherProgramRegistered, otherProgramAvailable, 
+              otherCollegeLimit, otherCollegeRegistered, otherCollegeAvailable
+          ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? );""",
+          (
+              courseData["id"], courseData["signableAdding"], courseData["waitingList"],
+              courseData["originLimit"], courseData["originRegistered"], courseData["originAvailable"],
+              courseData["allLimit"], courseData["allRegistered"], courseData["allAvailable"],
+              courseData["otherDeptLimit"], courseData["otherDeptRegistered"], courseData["otherDeptAvailable"],
+              courseData["sameGradeLimit"], courseData["sameGradeRegistered"], courseData["sameGradeAvailable"],
+              courseData["diffGradeLimit"], courseData["diffGradeRegistered"], courseData["diffGradeAvailable"],
+              courseData["minorLimit"], courseData["minorRegistered"], courseData["minorAvailable"],
+              courseData["doubleMajorLimit"], courseData["doubleMajorRegistered"], courseData["doubleMajorAvailable"],
+              courseData["otherDeptLimit"], courseData["otherDeptRegistered"], courseData["otherDeptAvailable"],
+              courseData["programLimit"], courseData["programRegistered"], courseData["programAvailable"],
+              courseData["sameGradeAndAboveLimit"], courseData["sameGradeAndAboveRegistered"], courseData["sameGradeAndAboveAvailable"],
+              courseData["lowerGradeLimit"], courseData["lowerGradeRegistered"], courseData["lowerGradeAvailable"],
+              courseData["otherProgramLimit"], courseData["otherProgramRegistered"], courseData["otherProgramAvailable"],
+              courseData["otherCollegeLimit"], courseData["otherCollegeRegistered"], courseData["otherCollegeAvailable"],
+          )
+      )
+      self.con.commit()
+
+  def getRemaining(self, y: str, s: str, courseId: str):
+      cur = self.con.cursor()
+      request = cur.execute("SELECT * FROM REMAIN WHERE id = ?", [y+s+courseId])
+      response = request.fetchone()
+      available_dict = dict(zip([desc[0] for desc in request.description if desc[0] != None], response))
+      return {key: value for key, value in available_dict.items() if value is not None}
 
 if __name__ == "__main__":
   db = DB("test.db")
-  print(db.getThisSemesterCourse("111", "2"))
+  # print(db.getThisSemesterCourse("111", "2"))
+  print(db.getRemaining("111", "1", "test"))
