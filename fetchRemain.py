@@ -39,10 +39,13 @@ def fetchRemain(fetch_url: str):
 
         soap = BeautifulSoup(response.content, "html.parser")
         
-        table = soap.find("div", {"class": "maintain_profile_content_table"}).find_all("tr")
-        open_to_signable_adding = table[5].find_all("td")[1].text
-        result["signableAdding"] = True if open_to_signable_adding == "是" else False
+        signable_element = soap.select_one("#Open_to_signable_addingL")
+        if signable_element:
+            result["signableAdding"] = signable_element.get_text(strip=True) == "是"
+        else:
+            result["signableAdding"] = None
         
+        table = soap.find("div", {"class": "maintain_profile_content_table"}).find_all("tr")
         number_on_waiting_list = table[6].find_all("td")[1].find("a").text
         result["waitingList"] = int(number_on_waiting_list) if number_on_waiting_list.isdigit() else number_on_waiting_list
         
